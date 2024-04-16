@@ -113,7 +113,7 @@ public class SecondCustomNetworkManager : NetworkManager
     public override void ServerChangeScene(string newSceneName)
     {
         // From menu to game
-        if (SceneManager.GetActiveScene().name == mainSceneName && newSceneName.StartsWith("L"))
+        if (SceneManager.GetActiveScene().name == mainSceneName && newSceneName == gameSceneName)
         {
             for (int i = RoomPlayers.Count - 1; i >= 0; i--)
             {
@@ -136,10 +136,10 @@ public class SecondCustomNetworkManager : NetworkManager
         }
     }
 
-    //public override void OnServerReady(NetworkConnectionToClient conn)
-    //{
-    //    base.OnServerReady(conn);
+    public override void OnServerReady(NetworkConnectionToClient conn)
+    {
+        base.OnServerReady(conn);
 
-    //    OnServerReadied?.Invoke(conn);
-    //}
+        OnServerReadied?.Invoke(conn);
+    }
 }
