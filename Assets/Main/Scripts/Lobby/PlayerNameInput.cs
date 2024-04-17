@@ -5,13 +5,13 @@ using UnityEngine.UI;
 
 public class PlayerNameInput : MonoBehaviour
 {
+    public static string DisplayName { get; private set; }
+    private const string PlayerPrefsNameKey = "PlayerName";
+    
     [Header("UI")]
     [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private Button continueButton;
 
-    public static string DisplayName { get; private set; }
-
-    private const string PlayerPrefsNameKey = "PlayerName";
 
     private void Start() => SetUpInputField();
 
@@ -29,8 +29,7 @@ public class PlayerNameInput : MonoBehaviour
     public void SetPlayerName()
     {
         string value = nameInputField.text;
-        Debug.Log(value);
-        continueButton.interactable = !string.IsNullOrEmpty(name);
+        continueButton.interactable = !string.IsNullOrEmpty(value);
     }
 
     public void SavePlayerName()

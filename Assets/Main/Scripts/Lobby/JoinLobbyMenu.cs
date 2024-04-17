@@ -7,24 +7,24 @@ using UnityEngine.UI;
 
 public class JoinLobbyMenu : MonoBehaviour
 {
-    [SerializeField] private SecondCustomNetworkManager networkManager;
+    [SerializeField] private CustomNetworkManager networkManager;
 
     [Header("UI")]
-    [SerializeField] private GameObject landingPagePanel = null;
-    [SerializeField] private TMP_InputField ipAddressInputField = null;
-    [SerializeField] private Button joinButton = null;
+    [SerializeField] private GameObject landingPagePanel;
+    [SerializeField] private TMP_InputField ipAddressInputField;
+    [SerializeField] private Button joinButton;
 
 
     private void OnEnable()
     {
-        SecondCustomNetworkManager.OnClientConnected += HandleClientConnected;
-        SecondCustomNetworkManager.OnClientDisconnected += HandleClientDisconnected;
+        CustomNetworkManager.OnClientConnected += HandleClientConnected;
+        CustomNetworkManager.OnClientDisconnected += HandleClientDisconnected;
     }
 
     private void OnDisable()
     {
-        SecondCustomNetworkManager.OnClientConnected -= HandleClientConnected;
-        SecondCustomNetworkManager.OnClientDisconnected -= HandleClientDisconnected;
+        CustomNetworkManager.OnClientConnected -= HandleClientConnected;
+        CustomNetworkManager.OnClientDisconnected -= HandleClientDisconnected;
     }
 
     public void JoinLobby()

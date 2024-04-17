@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class MainMenu : MonoBehaviour
 {
-    [SerializeField] private SecondCustomNetworkManager networkManager;
+    [SerializeField] private CustomNetworkManager networkManager;
 
     [Header("UI")]
-    [SerializeField] private GameObject landingPagePanel = null;
+    [SerializeField] private GameObject landingPagePanel;
 
     public void HostLobby()
     {

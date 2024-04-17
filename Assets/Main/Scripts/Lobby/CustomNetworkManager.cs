@@ -8,26 +8,25 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
-public class SecondCustomNetworkManager : NetworkManager
+public class CustomNetworkManager : NetworkManager
 {
-    private string mainSceneName = "SceneLobby";
-    private string gameSceneName = "MainGameScene";
-
-    [SerializeField] private int minPlayers = 1;
-    [Scene][SerializeField] private string menuScene = string.Empty;
-    [Header("Room")]
-    [SerializeField] private NetworkRoomPlayer roomPlayerPrefab = null;
-
-    [Header("Game")]
-    [SerializeField] private NetworkGamePlayer gamePlayerPrefab = null;
-    [SerializeField] private GameObject playerSpawnSystem = null;
-
     public static event Action OnClientConnected;
     public static event Action OnClientDisconnected;
     public static event Action<NetworkConnection> OnServerReadied;
-
     public List<NetworkRoomPlayer> RoomPlayers { get; } = new List<NetworkRoomPlayer>();
     public List<NetworkGamePlayer> GamePlayers { get; } = new List<NetworkGamePlayer>();
+
+    [SerializeField] private int minPlayers = 1;
+
+    [Header("Room")]
+    [SerializeField] private NetworkRoomPlayer roomPlayerPrefab;
+
+    [Header("Game")]
+    [SerializeField] private NetworkGamePlayer gamePlayerPrefab;
+    [SerializeField] private GameObject playerSpawnSystem;
+
+    private const string MainSceneName = "SceneLobby";
+    private const string GameSceneName = "MainGameScene";
 
 
     public override void OnClientConnect()
@@ -49,7 +48,7 @@ public class SecondCustomNetworkManager : NetworkManager
             conn.Disconnect();
             return;
         }
-        if (SceneManager.GetActiveScene().name != mainSceneName)
+        if (SceneManager.GetActiveScene().name != MainSceneName)
         {
             conn.Disconnect();
             return;
@@ -58,7 +57,7 @@ public class SecondCustomNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        if (SceneManager.GetActiveScene().name == mainSceneName)
+        if (SceneManager.GetActiveScene().name == MainSceneName)
         {
             bool isLeader = RoomPlayers.Count == 0;
             NetworkRoomPlayer roomPlayerInstance = Instantiate(roomPlayerPrefab);
@@ -103,7 +102,7 @@ public class SecondCustomNetworkManager : NetworkManager
 
     public void StartGame()
     {
-        if (SceneManager.GetActiveScene().name == mainSceneName)
+        if (SceneManager.GetActiveScene().name == MainSceneName)
         {
             if (!IsReadyToStart()) { return; }
             ServerChangeScene("MainGameScene");
@@ -112,8 +111,7 @@ public class SecondCustomNetworkManager : NetworkManager
 
     public override void ServerChangeScene(string newSceneName)
     {
-        // From menu to game
-        if (SceneManager.GetActiveScene().name == mainSceneName && newSceneName == gameSceneName)
+        if (SceneManager.GetActiveScene().name == MainSceneName && newSceneName == GameSceneName)
         {
             for (int i = RoomPlayers.Count - 1; i >= 0; i--)
             {
@@ -124,12 +122,12 @@ public class SecondCustomNetworkManager : NetworkManager
             }
         }
 
-        base.ServerChangeScene(gameSceneName);
+        base.ServerChangeScene(GameSceneName);
     }
 
     public override void OnServerSceneChanged(string sceneName)
     {
-        if (sceneName == gameSceneName)
+        if (sceneName == GameSceneName)
         {
             GameObject playerSpawnSystemInstance = Instantiate(playerSpawnSystem);
             NetworkServer.Spawn(playerSpawnSystemInstance);

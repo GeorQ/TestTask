@@ -30,13 +30,13 @@ public class NetworkRoomPlayer : NetworkBehaviour
         }
     }
 
-    private SecondCustomNetworkManager room;
-    private SecondCustomNetworkManager Room
+    private CustomNetworkManager room;
+    private CustomNetworkManager Room
     {
         get
         {
             if (room != null) { return room; }
-            return room = NetworkManager.singleton as SecondCustomNetworkManager;
+            return room = NetworkManager.singleton as CustomNetworkManager;
         }
     }
 

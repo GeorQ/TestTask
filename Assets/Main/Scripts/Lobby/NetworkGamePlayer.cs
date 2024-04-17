@@ -8,13 +8,13 @@ public class NetworkGamePlayer : NetworkBehaviour
     [SyncVar]
     private string displayName = "Loading...";
 
-    private SecondCustomNetworkManager room;
-    private SecondCustomNetworkManager Room
+    private CustomNetworkManager room;
+    private CustomNetworkManager Room
     {
         get
         {
             if (room != null) { return room; }
-            return room = NetworkManager.singleton as SecondCustomNetworkManager;
+            return room = NetworkManager.singleton as CustomNetworkManager;
         }
     }
 
