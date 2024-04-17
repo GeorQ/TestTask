@@ -10,6 +10,11 @@ using UnityEngine.SceneManagement;
 
 public class CustomNetworkManager : NetworkManager
 {
+    struct PlayerNameMessage : NetworkMessage
+    {
+        public string playerName;
+    }
+
     public static event Action OnClientConnected;
     public static event Action OnClientDisconnected;
     public static event Action<NetworkConnection> OnServerReadied;
@@ -24,18 +29,38 @@ public class CustomNetworkManager : NetworkManager
     [Header("Game")]
     [SerializeField] private NetworkGamePlayer gamePlayerPrefab;
     [SerializeField] private GameObject playerSpawnSystem;
+    [SerializeField] private NetworkRoomPlayer networkRoomPlayer;
 
     private const string MainSceneName = "SceneLobby";
     private const string GameSceneName = "MainGameScene";
 
+    private Dictionary<NetworkConnectionToClient, byte> clientIDs = new Dictionary<NetworkConnectionToClient, byte>();
+
+    private byte currentId = 0;
+
+
+    public override void OnStartServer()
+    {
+        Debug.Log("4");
+        NetworkServer.RegisterHandler<PlayerNameMessage>(OnNameReceived);
+    }
+    
+    private void OnNameReceived(NetworkConnectionToClient conn, PlayerNameMessage playerNameMessage)
+    {
+        Debug.Log("5");
+        networkRoomPlayer.AddPlayer(clientIDs[conn], playerNameMessage.playerName);
+    }
 
     public override void OnClientConnect()
     {
+        Debug.Log("6");
         base.OnClientConnect();
         OnClientConnected?.Invoke();
+        PlayerNameMessage nameMessage = new PlayerNameMessage() { playerName = PlayerNameInput.DisplayName };
+        NetworkClient.Send(nameMessage);
     }
 
-    public override void OnClientDisconnect( )
+    public override void OnClientDisconnect()
     {
         base.OnClientDisconnect();
         OnClientDisconnected?.Invoke();
@@ -53,17 +78,19 @@ public class CustomNetworkManager : NetworkManager
             conn.Disconnect();
             return;
         }
+
+        clientIDs.Add(conn, currentId++);
     }
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        if (SceneManager.GetActiveScene().name == MainSceneName)
-        {
-            bool isLeader = RoomPlayers.Count == 0;
-            NetworkRoomPlayer roomPlayerInstance = Instantiate(roomPlayerPrefab);
-            roomPlayerInstance.IsLeader = isLeader;
-            NetworkServer.AddPlayerForConnection(conn, roomPlayerInstance.gameObject);
-        }
+        //if (SceneManager.GetActiveScene().name == MainSceneName)
+        //{
+        //    bool isLeader = RoomPlayers.Count == 0;
+        //    NetworkRoomPlayer roomPlayerInstance = Instantiate(roomPlayerPrefab);
+        //    roomPlayerInstance.IsLeader = isLeader;
+        //    NetworkServer.AddPlayerForConnection(conn, roomPlayerInstance.gameObject);
+        //}
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
