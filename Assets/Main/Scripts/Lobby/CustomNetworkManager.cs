@@ -10,54 +10,46 @@ using UnityEngine.SceneManagement;
 
 public class CustomNetworkManager : NetworkManager
 {
-    struct PlayerNameMessage : NetworkMessage
-    {
-        public string playerName;
-    }
-
     public static event Action OnClientConnected;
     public static event Action OnClientDisconnected;
     public static event Action<NetworkConnection> OnServerReadied;
-    public List<NetworkRoomPlayer> RoomPlayers { get; } = new List<NetworkRoomPlayer>();
-    public List<NetworkGamePlayer> GamePlayers { get; } = new List<NetworkGamePlayer>();
 
     [SerializeField] private int minPlayers = 1;
 
     [Header("Room")]
-    [SerializeField] private NetworkRoomPlayer roomPlayerPrefab;
+    [SerializeField] private NetworkLobby networkLobby;
 
     [Header("Game")]
-    [SerializeField] private NetworkGamePlayer gamePlayerPrefab;
+    [SerializeField] private GameObject gamePlayerPrefab;
     [SerializeField] private GameObject playerSpawnSystem;
-    [SerializeField] private NetworkRoomPlayer networkRoomPlayer;
 
     private const string MainSceneName = "SceneLobby";
     private const string GameSceneName = "MainGameScene";
 
-    private Dictionary<NetworkConnectionToClient, byte> clientIDs = new Dictionary<NetworkConnectionToClient, byte>();
-
-    private byte currentId = 0;
-
 
     public override void OnStartServer()
     {
-        Debug.Log("4");
         NetworkServer.RegisterHandler<PlayerNameMessage>(OnNameReceived);
     }
-    
+
     private void OnNameReceived(NetworkConnectionToClient conn, PlayerNameMessage playerNameMessage)
     {
-        Debug.Log("5");
-        networkRoomPlayer.AddPlayer(clientIDs[conn], playerNameMessage.playerName);
+        networkLobby.AddPlayer(conn, playerNameMessage);
     }
 
     public override void OnClientConnect()
     {
-        Debug.Log("6");
         base.OnClientConnect();
         OnClientConnected?.Invoke();
         PlayerNameMessage nameMessage = new PlayerNameMessage() { playerName = PlayerNameInput.DisplayName };
         NetworkClient.Send(nameMessage);
+        NetworkClient.AddPlayer();
+    }
+
+    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
+    {
+        base.OnServerAddPlayer(conn);
+        networkLobby.NewPlayerInit(conn);
     }
 
     public override void OnClientDisconnect()
@@ -78,93 +70,40 @@ public class CustomNetworkManager : NetworkManager
             conn.Disconnect();
             return;
         }
-
-        clientIDs.Add(conn, currentId++);
-    }
-
-    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
-    {
-        //if (SceneManager.GetActiveScene().name == MainSceneName)
-        //{
-        //    bool isLeader = RoomPlayers.Count == 0;
-        //    NetworkRoomPlayer roomPlayerInstance = Instantiate(roomPlayerPrefab);
-        //    roomPlayerInstance.IsLeader = isLeader;
-        //    NetworkServer.AddPlayerForConnection(conn, roomPlayerInstance.gameObject);
-        //}
-    }
-
-    public override void OnServerDisconnect(NetworkConnectionToClient conn)
-    {
-        if (conn.identity != null)
-        {
-            var player = conn.identity.GetComponent<NetworkRoomPlayer>();
-            RoomPlayers.Remove(player);
-            NotifyPlayersOfReadyState();
-        }
-        base.OnServerDisconnect(conn);
-    }
-
-    public override void OnStopServer()
-    {
-        RoomPlayers.Clear();
-    }
-
-    public void NotifyPlayersOfReadyState()
-    {
-        foreach (var player in RoomPlayers)
-        {
-            player.HandleReadyToStart(IsReadyToStart());
-        }
-    }
-
-    private bool IsReadyToStart()
-    {
-        if (numPlayers < minPlayers) { return false; }
-        foreach (var player in RoomPlayers)
-        {
-            if (!player.IsReady) { return false; }
-        }
-        return true;
     }
 
     public void StartGame()
     {
-        if (SceneManager.GetActiveScene().name == MainSceneName)
-        {
-            if (!IsReadyToStart()) { return; }
-            ServerChangeScene("MainGameScene");
-        }
+        ServerChangeScene(GameSceneName);
     }
 
-    public override void ServerChangeScene(string newSceneName)
+    private void SpawnPlayer(NetworkConnectionToClient conn)
     {
-        if (SceneManager.GetActiveScene().name == MainSceneName && newSceneName == GameSceneName)
-        {
-            for (int i = RoomPlayers.Count - 1; i >= 0; i--)
-            {
-                var conn = RoomPlayers[i].connectionToClient;
-                var gameplayerInstance = Instantiate(gamePlayerPrefab);
-                gameplayerInstance.SetDisplayName(RoomPlayers[i].DisplayName);
-                NetworkServer.ReplacePlayerForConnection(conn, gameplayerInstance.gameObject);
-            }
-        }
+        NetworkServer.DestroyPlayerForConnection(conn);
 
-        base.ServerChangeScene(GameSceneName);
+        Vector3 startPosition = GetStartPosition().position;
+
+        var gameplayerInstance = Instantiate(gamePlayerPrefab, startPosition, Quaternion.identity);
+
+        PlayerInfo playerInfo = networkLobby.GetData(conn);
+
+        //gameplayerInstance.GetComponent<PlayerData>().Initialize(playerInfo.playerColor, playerInfo.clientID);
+
+        NetworkServer.AddPlayerForConnection(conn, gameplayerInstance.gameObject);
     }
 
-    public override void OnServerSceneChanged(string sceneName)
+    public override void OnClientSceneChanged()
     {
-        if (sceneName == GameSceneName)
-        {
-            GameObject playerSpawnSystemInstance = Instantiate(playerSpawnSystem);
-            NetworkServer.Spawn(playerSpawnSystemInstance);
-        }
+        base.OnClientSceneChanged();
     }
 
     public override void OnServerReady(NetworkConnectionToClient conn)
     {
         base.OnServerReady(conn);
 
-        OnServerReadied?.Invoke(conn);
+        if (SceneManager.GetActiveScene().name == GameSceneName)
+        {
+            SpawnPlayer(conn);
+        }
     }
 }

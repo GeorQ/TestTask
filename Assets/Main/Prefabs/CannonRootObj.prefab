@@ -80,6 +80,7 @@ GameObject:
   - component: {fileID: 3623080554033056446}
   - component: {fileID: 6788611812123659102}
   - component: {fileID: -8343308388854495834}
+  - component: {fileID: 7653531647541805438}
   m_Layer: 0
   m_Name: CannonRootObj
   m_TagString: Untagged
@@ -336,6 +337,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   transformGun: {fileID: 4007065581810393040}
   transformBase: {fileID: 6645474519028925723}
+--- !u!114 &7653531647541805438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3340650091762057107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69982060e8cfcc74ab9cba6c2ca2201c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerName: 
 --- !u!1 &3566316209032199592
 GameObject:
   m_ObjectHideFlags: 0

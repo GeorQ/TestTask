@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System;
 using UnityEngine.UI;
 
 
@@ -11,8 +12,16 @@ public class PlayerCard : MonoBehaviour
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private TMP_Text readyText;
     [SerializeField] private Image colorImage;
+    [SerializeField] private GameObject nextColorButton;
     private int currentColorID = 0;
-    
+
+    public event Action onColorChange;
+
+
+    private void Start()
+    {
+        nextColorButton.SetActive(true);
+    }
 
     public void SetCard(string name, bool readyStatus, int colorID)
     {
@@ -21,23 +30,13 @@ public class PlayerCard : MonoBehaviour
         readyText.text = readyStatus ? "<color=green>Ready</color>" : "<color=red>Not Ready</color>";
     }
 
-    public void NextColor()
+    public void ChangeColor()
     {
-        if (currentColorID >= 3)
-        {
-            return;
-        }
-
-        colorImage.color = colors[++currentColorID];
+        onColorChange?.Invoke();
     }
-
-    public void PreviousColor()
+    
+    public void SetButtonActive()
     {
-        if (currentColorID <= 0)
-        {
-            return;
-        }
-
-        colorImage.color = colors[--currentColorID];
+        nextColorButton.SetActive(true);
     }
 }

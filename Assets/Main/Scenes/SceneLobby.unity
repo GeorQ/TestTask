@@ -1208,8 +1208,8 @@ MonoBehaviour:
   authenticator: {fileID: 0}
   playerPrefab: {fileID: 7300459402305740223, guid: cb2d7cb490549694095b3fc8788fbf4a,
     type: 3}
-  autoCreatePlayer: 1
-  playerSpawnMethod: 0
+  autoCreatePlayer: 0
+  playerSpawnMethod: 1
   spawnPrefabs:
   - {fileID: 7595532050797491149, guid: 773963ff4bfd28d4ba0b83c13af49cdb, type: 3}
   - {fileID: 1215691948914759090, guid: a8a27f25904f68d488d213e222014010, type: 3}
@@ -1232,13 +1232,11 @@ MonoBehaviour:
   evaluationInterval: 3
   timeInterpolationGui: 0
   minPlayers: 1
-  roomPlayerPrefab: {fileID: 7231470473466992187, guid: a8a27f25904f68d488d213e222014010,
-    type: 3}
-  gamePlayerPrefab: {fileID: 580704054347184444, guid: 773963ff4bfd28d4ba0b83c13af49cdb,
+  networkLobby: {fileID: 8664631099334141194}
+  gamePlayerPrefab: {fileID: 3340650091762057107, guid: 6f7fbf3164eda7847bdb4e9eb350baae,
     type: 3}
   playerSpawnSystem: {fileID: 4759190339734431450, guid: 580cd0b71599bc84988694a53c9150a1,
     type: 3}
-  networkRoomPlayer: {fileID: 8664631099334141194}
 --- !u!4 &716126385
 Transform:
   m_ObjectHideFlags: 0
@@ -3975,7 +3973,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 8664631099334141194}
         m_TargetAssemblyTypeName: NetworkRoomPlayer, Assembly-CSharp
-        m_MethodName: CmdReadyUp
+        m_MethodName: UpdateReadyStatus
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4219,14 +4217,14 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 2864192893258554541}
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 8664631099334141194}
         m_TargetAssemblyTypeName: NetworkRoomPlayer, Assembly-CSharp
-        m_MethodName: CmdStartGame
+        m_MethodName: StartGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4386,8 +4384,6 @@ MonoBehaviour:
   rootObject: {fileID: 2109325655}
   playerCard: {fileID: 4108269083033370586, guid: 6b93a12b3774ac54f8a04b78071718db,
     type: 3}
-  DisplayName: Loading...
-  IsReady: 0
 --- !u!114 &8664631099334141195
 MonoBehaviour:
   m_ObjectHideFlags: 0
