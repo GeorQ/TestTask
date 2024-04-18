@@ -6,6 +6,7 @@ public class TimeCounter : IDisposable
 {
     public event Action<float> TimerEnd;
     public event Action<float> TimerUpdated;
+    public event Action TimerStarted;
 
     private IInput _input;
     private float _timer;
@@ -22,6 +23,7 @@ public class TimeCounter : IDisposable
     private void OnClickDown(Vector3 mousePos)
     {
         _timer = 0;
+        TimerStarted?.Invoke();
     }
 
     private void OnClickUp(Vector3 mousePos)

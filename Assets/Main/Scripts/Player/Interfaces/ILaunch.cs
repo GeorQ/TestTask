@@ -3,6 +3,6 @@ using UnityEngine;
 
 public interface ILaunch
 {
-    //Transform ShotPoint { get; }
+    Transform StartPoint { get; }
     void Launch(float holdTime);
 }

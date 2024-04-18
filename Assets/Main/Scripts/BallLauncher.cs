@@ -8,22 +8,23 @@ using UnityEngine.UI;
 
 public class BallLauncher : NetworkBehaviour, ILaunch
 {
-    [SerializeField] private GameObject ballReference;
+    [SerializeField] private BallBase ballReference;
     [SerializeField] private Transform shootPoint;
-    [SerializeField] private Image reloadImage;
-
-    private Camera mainCamera;
+    
+    private byte _ownerID;
     private float forceAmmount = 40f;
     private Coroutine currentCoroutine;
     private float attackRate = 5f; //Attacks per second
     private float cdTime => 1.0f / attackRate; //Cooldown time 
 
+    public Transform StartPoint => shootPoint;
+
     public event Action<float> OnReloadEvent;
 
 
-    public override void OnStartLocalPlayer()
+    public void Initialize(byte ownerID)
     {
-        mainCamera = Camera.main;
+        _ownerID = ownerID;
     }
 
     public void Launch(float holdTime)
@@ -36,8 +37,6 @@ public class BallLauncher : NetworkBehaviour, ILaunch
         
         currentCoroutine = StartCoroutine(Reload());
         float holdAmplification = Mathf.Clamp(holdTime, 0.2f, 3.0f);
-        //GameObject ball = Instantiate(ballReference, shootPoint.position, UnityEngine.Random.rotation);
-        //ball.GetComponent<Rigidbody>().AddForce(mainCamera.transform.forward * forceAmmount * holdAmplification, ForceMode.Impulse);
         CmdSpawnBall(holdAmplification, shootPoint.forward);
     }
 
@@ -45,9 +44,12 @@ public class BallLauncher : NetworkBehaviour, ILaunch
     public void CmdSpawnBall(float holdTime, Vector3 dir)
     {
         float holdAmplification = Mathf.Clamp(holdTime, 0.2f, 3.0f);
-        GameObject ball = Instantiate(ballReference, shootPoint.position, Quaternion.identity);
-        NetworkServer.Spawn(ball);
-        ball.GetComponent<Rigidbody>().AddForce(dir * 40 * holdAmplification, ForceMode.Impulse);
+        //BallBase ball = Instantiate(ballReference, shootPoint.position, Quaternion.identity);
+        //NetworkServer.Spawn(ball.gameObject);
+        BallBase ball = PoolSystem.GetBallFromPool();
+        RpcActivateBall(ball.gameObject);
+        ball.ResetBall(shootPoint.position);
+        ball.Push(dir, forceAmmount * holdAmplification, _ownerID);
     }
 
     private IEnumerator Reload()
@@ -62,5 +64,12 @@ public class BallLauncher : NetworkBehaviour, ILaunch
         }
         
         currentCoroutine = null;
+    }
+
+
+    [ClientRpc]
+    public void RpcActivateBall(GameObject objectToActivate)
+    {
+        objectToActivate.SetActive(true);
     }
 }

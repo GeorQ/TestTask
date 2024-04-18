@@ -12,31 +12,12 @@ public class PlayerCard : MonoBehaviour
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private TMP_Text readyText;
     [SerializeField] private Image colorImage;
-    [SerializeField] private GameObject nextColorButton;
-    private int currentColorID = 0;
 
-    public event Action onColorChange;
-
-
-    private void Start()
-    {
-        nextColorButton.SetActive(true);
-    }
 
     public void SetCard(string name, bool readyStatus, int colorID)
     {
-        colorImage.color = colors[colorID];
+        colorImage.color = colors[colorID - 1];
         nameText.text = name;
         readyText.text = readyStatus ? "<color=green>Ready</color>" : "<color=red>Not Ready</color>";
-    }
-
-    public void ChangeColor()
-    {
-        onColorChange?.Invoke();
-    }
-    
-    public void SetButtonActive()
-    {
-        nextColorButton.SetActive(true);
     }
 }

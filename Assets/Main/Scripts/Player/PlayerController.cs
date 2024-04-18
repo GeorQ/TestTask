@@ -5,35 +5,39 @@ using UnityEngine;
 [RequireComponent(typeof(IInput), typeof(ILaunch))]
 public class PlayerController : NetworkBehaviour
 {
-    [SerializeField] private Transform transformGun;
-    [SerializeField] private Transform transformBase;
     [SerializeField] private Transform cameraSpot;
 
     private GunRotator gunRotator;
     private IInput playerInput;
-    private ILaunch ballLauncher;
+    private ILaunch _launcher;
     private TimeCounter _timeCounter;
+    private GameObject scoreManager;
 
-
-    public void Initialize(IInput input, TimeCounter timeCounter, GunRotator gunRotator)
+    public void Initialize(IInput input, TimeCounter timeCounter, GunRotator gunRotator, ILaunch launcher)
     {
         Camera.main.GetComponent<CameraMovement>().CameraInit(cameraSpot);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         playerInput = input;
         _timeCounter = timeCounter;
-        ballLauncher = GetComponent<ILaunch>();
+        _launcher = launcher;
         _timeCounter.TimerEnd += Shoot;
         this.gunRotator = gunRotator;
+
+        scoreManager = FindFirstObjectByType<ScoreManager>().transform.GetChild(0).gameObject; //TODO  - remove and find better way to get obj
     }
 
     private void Update()
     {
-        if (!isOwned) { return; }
+        if (!isLocalPlayer) { return; }
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Tab))
         {
-            Debug.Log("Hello world");
+            scoreManager.SetActive(true);
+        }
+        else if (Input.GetKeyUp(KeyCode.Tab))
+        {
+            scoreManager.SetActive(false);
         }
 
         gunRotator.Rotate(playerInput.GetPointerDelta());
@@ -41,10 +45,9 @@ public class PlayerController : NetworkBehaviour
 
     private void Shoot(float holdTime)
     {
-        Debug.Log(holdTime);
         if (holdTime > 0)
         {
-            ballLauncher.Launch(holdTime);
+            _launcher.Launch(holdTime);
         }
     }
 

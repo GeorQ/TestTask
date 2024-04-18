@@ -12,19 +12,20 @@ public class CustomNetworkManager : NetworkManager
 {
     public static event Action OnClientConnected;
     public static event Action OnClientDisconnected;
-    public static event Action<NetworkConnection> OnServerReadied;
 
-    [SerializeField] private int minPlayers = 1;
+    //[SerializeField] private int minPlayers = 1;
 
     [Header("Room")]
     [SerializeField] private NetworkLobby networkLobby;
 
     [Header("Game")]
-    [SerializeField] private GameObject gamePlayerPrefab;
-    [SerializeField] private GameObject playerSpawnSystem;
+    [SerializeField] private Bootstrap gamePlayerPrefab;
+    [SerializeField] private ScoreManager scoreManagerPrefab;
 
     private const string MainSceneName = "SceneLobby";
     private const string GameSceneName = "MainGameScene";
+
+    public ScoreManager scoreManager;
 
 
     public override void OnStartServer()
@@ -44,12 +45,6 @@ public class CustomNetworkManager : NetworkManager
         PlayerNameMessage nameMessage = new PlayerNameMessage() { playerName = PlayerNameInput.DisplayName };
         NetworkClient.Send(nameMessage);
         NetworkClient.AddPlayer();
-    }
-
-    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
-    {
-        base.OnServerAddPlayer(conn);
-        networkLobby.NewPlayerInit(conn);
     }
 
     public override void OnClientDisconnect()
@@ -81,20 +76,30 @@ public class CustomNetworkManager : NetworkManager
     {
         NetworkServer.DestroyPlayerForConnection(conn);
 
-        Vector3 startPosition = GetStartPosition().position;
+        Transform startTransform = GetStartPosition();
 
-        var gameplayerInstance = Instantiate(gamePlayerPrefab, startPosition, Quaternion.identity);
+        RoomPlayerInfo roomPlayerInfo = networkLobby.GetData(conn);
 
-        PlayerInfo playerInfo = networkLobby.GetData(conn);
+        startTransform.GetComponent<SyncObjectColor>().UpdateColor(roomPlayerInfo.playerColor);
 
-        //gameplayerInstance.GetComponent<PlayerData>().Initialize(playerInfo.playerColor, playerInfo.clientID);
+        Bootstrap gameplayerInstance = Instantiate(gamePlayerPrefab, startTransform.position, Quaternion.identity);
+
+        gameplayerInstance.ServerInitialize(scoreManager, roomPlayerInfo);
 
         NetworkServer.AddPlayerForConnection(conn, gameplayerInstance.gameObject);
+        
+        scoreManager.AddPlayer(roomPlayerInfo.clientID, new GamePlayerInfo { playerColor = roomPlayerInfo.playerColor, playerName = roomPlayerInfo.playerName, score = 0 });
     }
 
     public override void OnClientSceneChanged()
     {
         base.OnClientSceneChanged();
+    }
+
+    public override void OnServerSceneChanged(string sceneName)
+    {
+        scoreManager = Instantiate(scoreManagerPrefab);
+        NetworkServer.Spawn(scoreManager.gameObject);
     }
 
     public override void OnServerReady(NetworkConnectionToClient conn)

@@ -1,16 +1,23 @@
 using Mirror;
 using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 
-public struct PlayerInfo
+public struct RoomPlayerInfo
 {
     public string playerName;
     public bool readyStatus;
     public PlayerColor playerColor;
     public byte clientID;
+}
+
+public struct GamePlayerInfo
+{
+    public PlayerColor playerColor;
+    public string playerName;
+    public int score;
 }
 
 public struct PlayerNameMessage : NetworkMessage
@@ -23,17 +30,27 @@ public class NetworkLobby : NetworkBehaviour
     [Header("UI")]
     [SerializeField] private Button startGameButton;
     [SerializeField] private Transform rootObject;
-    [SerializeField] private GameObject playerCard;
+    [SerializeField] private PlayerCard playerCard;
+    [SerializeField] private TMP_Text _hostNameText;
     
     private Dictionary<NetworkConnectionToClient, byte> clientIDs = new Dictionary<NetworkConnectionToClient, byte>();
-    private readonly SyncList<PlayerInfo> playersInfo = new SyncList<PlayerInfo>();
+    private readonly SyncList<RoomPlayerInfo> playersInfo = new SyncList<RoomPlayerInfo>();
     private byte currentId = 0;
 
+    [SyncVar(hook = nameof(UpdateHostName))] private string hostName;
+
+
+    private void UpdateHostName(string oldValue, string newValue)
+    {
+        _hostNameText.text = $"{newValue}'s Lobby";
+    }
 
     public override void OnStartServer()
     {
         NetworkServer.OnConnectedEvent += OnClientConnected;
         NetworkServer.OnDisconnectedEvent += OnClientDisconect;
+
+        hostName = PlayerNameInput.DisplayName;
     }
 
     public override void OnStopServer()
@@ -50,7 +67,7 @@ public class NetworkLobby : NetworkBehaviour
     private void OnClientDisconect(NetworkConnectionToClient conn)
     {
         byte clientID = clientIDs[conn];
-        foreach (PlayerInfo item in playersInfo)
+        foreach (RoomPlayerInfo item in playersInfo)
         {
             if (item.clientID == clientID) 
             { 
@@ -63,7 +80,7 @@ public class NetworkLobby : NetworkBehaviour
 
     public void AddPlayer(NetworkConnectionToClient conn, PlayerNameMessage message)
     {
-        playersInfo.Add(new PlayerInfo() { clientID = clientIDs[conn], playerName = message.playerName, readyStatus = false });
+        playersInfo.Add(new RoomPlayerInfo() { clientID = clientIDs[conn], playerName = message.playerName, readyStatus = false, playerColor = (PlayerColor) GetRandomColor() });
     }
 
     public void Start()
@@ -76,60 +93,30 @@ public class NetworkLobby : NetworkBehaviour
         playersInfo.Callback += OnPlayerUpdate;
         for (int index = 0; index < playersInfo.Count; index++)
         {
-            OnPlayerUpdate(SyncList<PlayerInfo>.Operation.OP_ADD, index, new PlayerInfo(), playersInfo[index]);
+            OnPlayerUpdate(SyncList<RoomPlayerInfo>.Operation.OP_ADD, index, new RoomPlayerInfo(), playersInfo[index]);
         }
     }
 
-    void OnPlayerUpdate(SyncList<PlayerInfo>.Operation op, int index, PlayerInfo oldItem, PlayerInfo newItem)
+    void OnPlayerUpdate(SyncList<RoomPlayerInfo>.Operation op, int index, RoomPlayerInfo oldItem, RoomPlayerInfo newItem)
     {
         switch (op)
         {
-            case SyncList<PlayerInfo>.Operation.OP_ADD:
+            case SyncList<RoomPlayerInfo>.Operation.OP_ADD:
                 CreatePlayerCard(newItem);
                 break;
-            case SyncList<PlayerInfo>.Operation.OP_REMOVEAT:
+            case SyncList<RoomPlayerInfo>.Operation.OP_REMOVEAT:
                 RemovePlayerCard(index);
                 break;
-            case SyncList<PlayerInfo>.Operation.OP_SET:
+            case SyncList<RoomPlayerInfo>.Operation.OP_SET:
                 UpdatePlayerCard(newItem, index);
                 break;
         }
     }
 
-    private void CreatePlayerCard(PlayerInfo playerInfo)
+    private void CreatePlayerCard(RoomPlayerInfo playerInfo)
     {
-        GameObject card = Instantiate(playerCard, rootObject);
-        PlayerCard temp = card.GetComponent<PlayerCard>();
-        //PlayerIdentity identity = NetworkClient.localPlayer.GetComponent<PlayerIdentity>();
-        //if (playerInfo.clientID == identity.playerID)
-        //{
-        //    temp.SetButtonActive();
-        //}
-        temp.onColorChange += ChangeColor;
-        temp.SetCard(playerInfo.playerName, false, playerInfo.clientID);
-    }
-
-    [Command(requiresAuthority = false)]
-    private void ChangePlayerColor(NetworkConnectionToClient conn = null)
-    {
-        Debug.Log(conn.connectionId);
-        int randomColorID = GetRandomColor();
-        
-        if (randomColorID == -1) { return; }
-
-        PlayerColor newColor = (PlayerColor) randomColorID;
-
-        byte clientID = clientIDs[conn];
-        for (int i = 0; i < playersInfo.Count; i++)
-        {
-            if (playersInfo[i].clientID == clientID)
-            {
-                PlayerInfo temp = playersInfo[i];
-                temp.playerColor = newColor;
-                playersInfo[i] = temp;
-                break;
-            }
-        }
+        PlayerCard card = Instantiate(playerCard, rootObject);
+        card.SetCard(playerInfo.playerName, playerInfo.readyStatus, (byte) playerInfo.playerColor);
     }
 
     private void RemovePlayerCard(int index)
@@ -137,7 +124,7 @@ public class NetworkLobby : NetworkBehaviour
         Destroy(rootObject.GetChild(index).gameObject);
     }
 
-    private void UpdatePlayerCard(PlayerInfo playerInfo, int index)
+    private void UpdatePlayerCard(RoomPlayerInfo playerInfo, int index)
     {
         rootObject.GetChild(index).GetComponent<PlayerCard>().SetCard(playerInfo.playerName, playerInfo.readyStatus, (byte) playerInfo.playerColor);
         //UpdateClientsColors();
@@ -151,7 +138,7 @@ public class NetworkLobby : NetworkBehaviour
         {
             if(playersInfo[i].clientID == clientID)
             {
-                PlayerInfo temp = playersInfo[i];
+                RoomPlayerInfo temp = playersInfo[i];
                 temp.readyStatus = !temp.readyStatus;
                 playersInfo[i] = temp;
                 break;
@@ -165,7 +152,7 @@ public class NetworkLobby : NetworkBehaviour
     {
         bool isInteractable = true;
         
-        foreach (PlayerInfo playerInfo in playersInfo)
+        foreach (RoomPlayerInfo playerInfo in playersInfo)
         {
             if (!playerInfo.readyStatus)
             {
@@ -188,11 +175,11 @@ public class NetworkLobby : NetworkBehaviour
         manager.StartGame();
     }
 
-    public PlayerInfo GetData(NetworkConnectionToClient conn)
+    public RoomPlayerInfo GetData(NetworkConnectionToClient conn)
     {
         byte clientID = clientIDs[conn];
 
-        foreach (PlayerInfo item in playersInfo)
+        foreach (RoomPlayerInfo item in playersInfo)
         {
             if (item.clientID == clientID)
             {
@@ -200,12 +187,12 @@ public class NetworkLobby : NetworkBehaviour
             }
         }
 
-        return new PlayerInfo();
+        return new RoomPlayerInfo();
     }
 
     private int GetRandomColor()
     {
-        List<int> freeColors = new List<int> { 0, 1, 2, 3 };
+        List<int> freeColors = new List<int> { 1, 2, 3, 4 };
 
         for (int i = 0; i < playersInfo.Count; i++)
         {
@@ -219,14 +206,31 @@ public class NetworkLobby : NetworkBehaviour
 
         return freeColors[Random.Range(0, freeColors.Count)];
     }
-   
-    private void ChangeColor()
+
+    [Command(requiresAuthority = false)]
+    private void CmdChangePlayerColor(NetworkConnectionToClient conn = null)
     {
-        ChangePlayerColor();
+        int randomColorID = GetRandomColor();
+
+        if (randomColorID == -1) { return; }
+
+        PlayerColor newColor = (PlayerColor)randomColorID;
+
+        byte clientID = clientIDs[conn];
+        for (int i = 0; i < playersInfo.Count; i++)
+        {
+            if (playersInfo[i].clientID == clientID)
+            {
+                RoomPlayerInfo temp = playersInfo[i];
+                temp.playerColor = newColor;
+                playersInfo[i] = temp;
+                break;
+            }
+        }
     }
 
-    public void NewPlayerInit(NetworkConnectionToClient conn)
+    public void ChangeColor()
     {
-        conn.identity.gameObject.GetComponent<PlayerIdentity>().SetPlayerID(clientIDs[conn]);
+        CmdChangePlayerColor();
     }
 }

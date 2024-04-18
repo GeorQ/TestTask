@@ -13,6 +13,8 @@ public class TrajectoryPredictorMediator : IDisposable
         _predictor = predictor;
         _timeCounter = timeCounter;
         _timeCounter.TimerUpdated += OnTimerUpdated;
+        _timeCounter.TimerEnd += OnTimerEnded;
+        _timeCounter.TimerStarted += OnTimerStarted;
     }
 
     private void OnTimerUpdated(float holdTime)
@@ -20,8 +22,20 @@ public class TrajectoryPredictorMediator : IDisposable
         _predictor.PredictTrajectory(holdTime);
     }
 
+    private void OnTimerEnded(float holdTime)
+    {
+        _predictor.SetProjectoryActiveStatus(false);
+    }
+
+    private void OnTimerStarted()
+    {
+        _predictor.SetProjectoryActiveStatus(true);
+    }
+
     public void Dispose()
     {
+        _timeCounter.TimerStarted -= OnTimerStarted;
         _timeCounter.TimerUpdated -= OnTimerUpdated;
+        _timeCounter.TimerEnd -= OnTimerEnded;
     }
 }

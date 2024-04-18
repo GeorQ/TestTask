@@ -5,27 +5,25 @@ using UnityEngine;
 public class TrajectoryPredictor : MonoBehaviour
 {
     [SerializeField] private Rigidbody objectToThrow;
-    [SerializeField] private Transform shootPoint;
-    
+    [SerializeField] private Transform hitMarkerPrefab;
+    private Transform _startPoint;
+
     #region Members
     private LineRenderer trajectoryLine;
-    [SerializeField] private Transform hitMarker;
+    private Transform hitMarker;
     [SerializeField, Range(10, 100), Tooltip("The maximum number of points the LineRenderer can have")] int maxPoints = 50;
     [SerializeField, Range(0.01f, 0.5f), Tooltip("The time increment used to calculate the trajectory")] float increment = 0.025f;
     [SerializeField, Range(1.05f, 2f), Tooltip("The raycast overlap between points in the trajectory, this is a multiplier of the length between points. 2 = twice as long")]
     float rayOverlap = 1.1f;
     #endregion
 
-    private void Awake()
-    {
-        hitMarker = GameObject.FindGameObjectWithTag("Marker").transform;
-    }
 
-    private void Start()
+    public void Initialize(Transform startPoint)
     {
+        hitMarker = Instantiate(hitMarkerPrefab);
         trajectoryLine = GetComponent<LineRenderer>();
-
         SetTrajectoryVisible(true);
+        _startPoint = startPoint;
     }
 
     public void PredictTrajectory(float holdAmmount)
@@ -95,12 +93,18 @@ public class TrajectoryPredictor : MonoBehaviour
     {
         ProjectileProperties properties = new ProjectileProperties();
 
-        properties.direction = shootPoint.transform.forward;
-        properties.initialPosition = shootPoint.position;
+        properties.direction = _startPoint.transform.forward;
+        properties.initialPosition = _startPoint.position;
         properties.initialSpeed = 40;
         properties.mass = objectToThrow.mass;
         properties.drag = objectToThrow.drag;
 
         return properties;
+    }
+
+    public void SetProjectoryActiveStatus(bool status)
+    {
+        hitMarker.gameObject.SetActive(status);
+        trajectoryLine.gameObject.SetActive(status);
     }
 }

@@ -1,28 +1,14 @@
-using Mirror;
-using System.Drawing;
 using UnityEngine;
 
-
-public class PlayerData : NetworkBehaviour
+public class PlayerData : MonoBehaviour
 {
-    [SyncVar(hook = nameof(OnPlayerColorChanged))] private Color32 playerColor;
-    [SyncVar(hook = nameof(OnPlayerScoreChanged))] private int score;
-    public byte id;
+    public byte ID;
+    public PlayerColor PlayerColor;
 
 
-    public void Initialize(Color32 color, byte id)
+    public void Initialize(byte id, PlayerColor playerColor)
     {
-        playerColor = color;
-        this.id = id;
-    }
-
-    private void OnPlayerColorChanged(Color32 oldValue, Color32 newValue)
-    {
-
-    }
-
-    private void OnPlayerScoreChanged(int oldValue, int newValue)
-    {
-
+        PlayerColor = playerColor;
+        ID = id;
     }
 }
